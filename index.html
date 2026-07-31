@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Laporan Keuangan Musholla Azko Parepare</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Arial, sans-serif;
+    background: #FBF8F1;
+    color: #1C2B24;
+  }
+  .serif { font-family: Georgia, 'Times New Roman', serif; }
+  .header {
+    position: relative;
+    overflow: hidden;
+    background: #0D4D3C;
+    color: #F3EFDE;
+    padding: 2.5rem 2rem 2.2rem;
+  }
+  .header-pattern {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56'%3E%3Cg fill='none' stroke='%230D4D3C' stroke-width='1.1'%3E%3Cpath d='M28 3 L34 22 L53 22 L38 34 L44 53 L28 42 L12 53 L18 34 L3 22 L22 22 Z'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 56px 56px;
+    opacity: 0.10;
+    pointer-events: none;
+  }
+  .header-inner { position: relative; max-width: 1080px; margin: 0 auto; }
+  .title {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0 0 0.35rem;
+    line-height: 1.2;
+  }
+  .subtitle { font-size: 14px; color: #CFE0D5; margin: 0; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 2rem 3rem; }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 2;
+  }
+  .card {
+    background: #FFFFFF;
+    border: 1px solid #E2DCC9;
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 4px 14px rgba(13,77,60,0.06);
+  }
+  .card-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+  .card-label { font-size: 12.5px; color: #6B675A; margin: 0 0 4px; }
+  .card-value { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .section { margin-top: 2rem; }
+  .section-title { font-size: 15px; font-weight: 700; margin: 0 0 0.9rem; display: flex; align-items: center; gap: 8px; }
+  .filter-bar { background: #FFFFFF; border: 1px solid #E2DCC9; border-radius: 14px; padding: 1rem 1.1rem; }
+  .presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0.9rem; }
+  .chip {
+    border: 1px solid #C9C2A8; background: #FBF8F1; color: #4A4738;
+    font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px; cursor: pointer;
+  }
+  .chip:hover { border-color: #0D4D3C; color: #0D4D3C; }
+  .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; align-items: end; }
+  .field label { display: block; font-size: 11.5px; color: #6B675A; margin-bottom: 4px; font-weight: 600; }
+  .field select, .field input {
+    width: 100%; border: 1px solid #D8D2BC; border-radius: 8px; padding: 7px 9px;
+    font-size: 13px; background: #FBF8F1; color: #1C2B24; font-family: inherit;
+  }
+  .field select:focus, .field input:focus { outline: none; border-color: #0D4D3C; }
+  .search-wrap { position: relative; }
+  .search-wrap span { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #9B9680; font-size: 13px; }
+  .search-wrap input { padding-left: 26px; }
+  .reset-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1px solid #D8D2BC; background: #FBF8F1; border-radius: 8px;
+    padding: 7px 10px; font-size: 12.5px; font-weight: 600; color: #4A4738; cursor: pointer; white-space: nowrap;
+  }
+  .reset-btn:hover { border-color: #A23E32; color: #A23E32; }
+  .upload-row {
+    display: flex; align-items: center; gap: 10px; margin-top: 0.9rem;
+    padding-top: 0.9rem; border-top: 1px dashed #E2DCC9; flex-wrap: wrap;
+  }
+  .upload-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0D4D3C; color: #F3EFDE; border: none; border-radius: 8px;
+    padding: 8px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .upload-hint { font-size: 12px; color: #8A866F; }
+  .upload-msg { font-size: 12.5px; padding: 6px 10px; border-radius: 6px; margin-top: 6px; display: none; }
+  .upload-msg.ok { background: #E4EFE7; color: #0D4D3C; display: block; }
+  .upload-msg.err { background: #F6E4E1; color: #A23E32; display: block; }
+  .chart-card { background: #FFFFFF; border: 1px solid #E2DCC9; border-radius: 14px; padding: 1.1rem 1.1rem 0.6rem; }
+  .table-card { background: #FFFFFF; border: 1px solid #E2DCC9; border-radius: 14px; overflow: hidden; }
+  .table-scroll { overflow-x: auto; }
+  table.dkm-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 720px; }
+  table.dkm-table thead th {
+    text-align: left; background: #0D4D3C; color: #EFE9D2;
+    padding: 9px 12px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
+  }
+  table.dkm-table tbody td { padding: 9px 12px; border-bottom: 1px solid #EFEADA; vertical-align: top; }
+  table.dkm-table tbody tr:hover { background: #FBF8F1; }
+  table.dkm-table tbody tr.saldo-row { background: #F3EFDE; font-weight: 700; }
+  .badge-jumat { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #F3E3B8; color: #7A5C0C; margin-left: 6px; }
+  .amount-in { color: #0D4D3C; font-weight: 600; }
+  .amount-out { color: #A23E32; font-weight: 600; }
+  .empty { padding: 2.5rem 1rem; text-align: center; color: #8A866F; font-size: 13.5px; }
+  .footer {
+    margin-top: 2.2rem; padding-top: 1.2rem; border-top: 1px solid #E2DCC9;
+    font-size: 12px; color: #8A866F; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  @media (max-width: 640px) {
+    .header { padding: 2rem 1.1rem 1.8rem; }
+    .wrap { padding: 0 1.1rem 3rem; }
+    .title { font-size: 27px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-pattern"></div>
+  <div class="header-inner">
+    <h1 class="title serif">MUSHOLLA AZKO PAREPARE</h1>
+    <p class="subtitle">Jl. Andi Mappatola No. 30, Kota Parepare, Sulawesi Selatan</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="cards" id="cards">
+    <div class="card">
+      <div class="card-icon" style="background:#E4EFE7;">💰</div>
+      <div>
+        <p class="card-label">Saldo kas saat ini</p>
+        <p class="card-value" id="val-saldo" style="color:#0D4D3C;">Rp0</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#E4EFE7;">⬆️</div>
+      <div>
+        <p class="card-label">Pemasukan (sesuai filter)</p>
+        <p class="card-value" id="val-masuk" style="color:#0D4D3C;">Rp0</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#F6E4E1;">⬇️</div>
+      <div>
+        <p class="card-label">Pengeluaran (sesuai filter)</p>
+        <p class="card-value" id="val-keluar" style="color:#A23E32;">Rp0</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:#F3E9CC;">🏛️</div>
+      <div>
+        <p class="card-label">Selisih periode ini</p>
+        <p class="card-value" id="val-selisih" style="color:#0D4D3C;">Rp0</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="section-title">🔍 Filter data</p>
+    <div class="filter-bar">
+      <div class="presets">
+        <button class="chip" id="preset-minggu">Minggu ini</button>
+        <button class="chip" id="preset-bulan">Bulan ini</button>
+        <button class="chip" id="preset-semua">Semua data</button>
+      </div>
+      <div class="filter-grid">
+        <div class="field">
+          <label>Tahun</label>
+          <select id="f-tahun"><option value="semua">Semua</option></select>
+        </div>
+        <div class="field">
+          <label>Bulan</label>
+          <select id="f-bulan">
+            <option value="semua">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Hari</label>
+          <select id="f-hari">
+            <option value="semua">Semua</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Jenis</label>
+          <select id="f-tipe">
+            <option value="semua">Semua</option>
+            <option value="masuk">Pemasukan</option>
+            <option value="keluar">Pengeluaran</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Dari tanggal</label>
+          <input type="date" id="f-mulai" />
+        </div>
+        <div class="field">
+          <label>Sampai tanggal</label>
+          <input type="date" id="f-akhir" />
+        </div>
+        <div class="field" style="grid-column: span 2;">
+          <label>Cari rincian / keterangan</label>
+          <div class="search-wrap">
+            <span>🔍</span>
+            <input type="text" id="f-search" placeholder="mis. Takjil, Sedekah, Karpet..." />
+          </div>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="reset-btn" id="btn-reset">↺ Reset</button>
+        </div>
+      </div>
+
+      <div class="upload-row">
+        <button class="upload-btn" id="btn-upload">⬆ Unggah data mingguan</button>
+        <span class="upload-hint">Unggah file .xls / .xlsx / .csv baru untuk memperbarui data (format kolom sama seperti sheet RINCIAN LAPORAN KEUANGAN)</span>
+        <input type="file" id="file-input" accept=".xls,.xlsx,.csv" style="display:none;" />
+      </div>
+      <div class="upload-msg" id="upload-msg"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="section-title">Tren mingguan (per Jumat)</p>
+    <div class="chart-card">
+      <canvas id="chart-tren" height="90"></canvas>
+      <p class="empty" id="chart-empty" style="display:none;">Belum ada data untuk ditampilkan pada grafik.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="section-title" id="table-title">Rincian transaksi</p>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table class="dkm-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Tanggal</th>
+              <th>Rincian</th>
+              <th>Pemasukan</th>
+              <th>Pengeluaran</th>
+              <th>Saldo</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>ℹ️ Laporan ini disusun untuk keperluan transparansi keuangan Musholla Azko Parepare.</span>
+    <span>Pengurus: Adrian Saputra</span>
+  </div>
+
+</div>
+
+<script>
+const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+
+const SEED_DATA = [
+  { no: 1, tanggal: "2025-12-08", rincian: "SALDO AWAL", masuk: 0, keluar: 0, saldo: 0, ket: "", tipe: "saldo" },
+  { no: 2, tanggal: "2025-12-08", rincian: "Hamba Allah", masuk: 1000, keluar: 0, saldo: 1000, ket: "Harian" },
+  { no: 3, tanggal: "2026-01-09", rincian: "Hamba Allah", masuk: 50000, keluar: 0, saldo: 51000, ket: "Jumat Berkah" },
+  { no: 4, tanggal: "2026-01-30", rincian: "Hamba Allah", masuk: 10000, keluar: 0, saldo: 61000, ket: "Sedekah Akhir bulan" },
+  { no: 5, tanggal: "2026-01-30", rincian: "Hamba Allah", masuk: 6000, keluar: 0, saldo: 67000, ket: "Sedekah Akhir bulan" },
+  { no: 6, tanggal: "2026-02-27", rincian: "Hamba Allah", masuk: 5000, keluar: 0, saldo: 72000, ket: "Takjil 28 Februari 2026 Masjid Ar Rahmat" },
+  { no: 7, tanggal: "2026-02-27", rincian: "Hamba Allah", masuk: 20000, keluar: 0, saldo: 92000, ket: "Takjil 28 Februari 2026 Masjid Ar Rahmat" },
+  { no: 8, tanggal: "2026-02-27", rincian: "Hamba Allah", masuk: 20000, keluar: 0, saldo: 112000, ket: "Takjil 28 Februari 2026 Masjid Ar Rahmat" },
+  { no: 9, tanggal: "2026-02-27", rincian: "Hamba Allah", masuk: 50000, keluar: 0, saldo: 162000, ket: "Takjil 28 Februari 2026 Masjid Ar Rahmat" },
+  { no: 10, tanggal: "2026-02-27", rincian: "Hamba Allah", masuk: 50000, keluar: 0, saldo: 212000, ket: "Takjil 28 Februari 2026 Masjid Ar Rahmat" },
+  { no: 11, tanggal: "2026-02-27", rincian: "Hamba Allah", masuk: 10000, keluar: 0, saldo: 222000, ket: "Takjil 28 Februari 2026 Masjid Ar Rahmat" },
+  { no: 12, tanggal: "2026-02-27", rincian: "Pembelian Takjil Masjid Ar Rahmat", masuk: 0, keluar: 70000, saldo: 152000, ket: "Beli Takjil Jalangkote Masjid Ar Rahmat" },
+  { no: 13, tanggal: "2026-07-03", rincian: "Hamba Allah", masuk: 20000, keluar: 0, saldo: 172000, ket: "" },
+  { no: 14, tanggal: "2026-07-31", rincian: "Hamba Allah", masuk: 20000, keluar: 0, saldo: 192000, ket: "" },
+  { no: 15, tanggal: "2026-07-31", rincian: "Hamba Allah", masuk: 20000, keluar: 0, saldo: 212000, ket: "" },
+];
+
+let data = SEED_DATA.slice();
+let filters = { tahun: "semua", bulan: "semua", hari: "semua", tipe: "semua", search: "", mulai: "", akhir: "" };
+let chartInstance = null;
+
+function formatRp(n) {
+  const v = Number(n || 0);
+  return "Rp" + v.toLocaleString("id-ID");
+}
+function toDate(str) {
+  const parts = str.split("-").map(Number);
+  return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+function formatTanggalIndo(str) {
+  const d = toDate(str);
+  return HARI[d.getDay()] + ", " + d.getDate() + " " + BULAN[d.getMonth()] + " " + d.getFullYear();
+}
+function fridayWeekEnd(str) {
+  const d = toDate(str);
+  const day = d.getDay();
+  const diff = (5 - day + 7) % 7;
+  const friday = new Date(d);
+  friday.setDate(d.getDate() + diff);
+  return friday;
+}
+function pad2(n) { return String(n).padStart(2, "0"); }
+function isoDate(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+
+function populateSelects() {
+  const years = Array.from(new Set(data.map(t => toDate(t.tanggal).getFullYear()))).sort();
+  const selTahun = document.getElementById("f-tahun");
+  selTahun.innerHTML = '<option value="semua">Semua</option>' + years.map(y => `<option value="${y}">${y}</option>`).join("");
+
+  const selBulan = document.getElementById("f-bulan");
+  selBulan.innerHTML = '<option value="semua">Semua</option>' + BULAN.map((b, i) => `<option value="${i}">${b}</option>`).join("");
+
+  const selHari = document.getElementById("f-hari");
+  selHari.innerHTML = '<option value="semua">Semua</option>' + HARI.map((h, i) => `<option value="${i}">${h}</option>`).join("");
+}
+
+function getFiltered() {
+  return data.filter(t => {
+    const d = toDate(t.tanggal);
+    if (filters.mulai && t.tanggal < filters.mulai) return false;
+    if (filters.akhir && t.tanggal > filters.akhir) return false;
+    if (filters.tahun !== "semua" && d.getFullYear() !== Number(filters.tahun)) return false;
+    if (filters.bulan !== "semua" && d.getMonth() !== Number(filters.bulan)) return false;
+    if (filters.hari !== "semua" && d.getDay() !== Number(filters.hari)) return false;
+    if (filters.tipe === "masuk" && !(t.masuk > 0)) return false;
+    if (filters.tipe === "keluar" && !(t.keluar > 0)) return false;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (!(t.rincian.toLowerCase().includes(q) || (t.ket || "").toLowerCase().includes(q))) return false;
+    }
+    return true;
+  });
+}
+
+function render() {
+  const filtered = getFiltered();
+
+  const totalMasuk = filtered.filter(t => t.tipe !== "saldo").reduce((s, t) => s + (t.masuk || 0), 0);
+  const totalKeluar = filtered.filter(t => t.tipe !== "saldo").reduce((s, t) => s + (t.keluar || 0), 0);
+  const saldoSaatIni = data.length ? data.reduce((latest, t) => (t.no >= latest.no ? t : latest), data[0]).saldo : 0;
+
+  document.getElementById("val-saldo").textContent = formatRp(saldoSaatIni);
+  document.getElementById("val-masuk").textContent = formatRp(totalMasuk);
+  document.getElementById("val-keluar").textContent = formatRp(totalKeluar);
+  const selisih = totalMasuk - totalKeluar;
+  const selisihEl = document.getElementById("val-selisih");
+  selisihEl.textContent = formatRp(selisih);
+  selisihEl.style.color = selisih >= 0 ? "#0D4D3C" : "#A23E32";
+
+  document.getElementById("table-title").textContent = `Rincian transaksi (${filtered.length} baris)`;
+
+  const tbody = document.getElementById("table-body");
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty">Tidak ada transaksi yang cocok dengan filter ini.</div></td></tr>`;
+  } else {
+    tbody.innerHTML = filtered.map(t => {
+      const d = toDate(t.tanggal);
+      const isJumat = d.getDay() === 5;
+      return `<tr class="${t.tipe === 'saldo' ? 'saldo-row' : ''}">
+        <td>${t.no}</td>
+        <td>${formatTanggalIndo(t.tanggal)}${isJumat ? '<span class="badge-jumat">Jumat</span>' : ''}</td>
+        <td>${t.rincian}</td>
+        <td class="${t.masuk ? 'amount-in' : ''}">${t.masuk ? formatRp(t.masuk) : '-'}</td>
+        <td class="${t.keluar ? 'amount-out' : ''}">${t.keluar ? formatRp(t.keluar) : '-'}</td>
+        <td style="font-weight:600;">${formatRp(t.saldo)}</td>
+        <td style="color:#6B675A;">${t.ket || '-'}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  renderChart();
+}
+
+function renderChart() {
+  const map = new Map();
+  data.filter(t => t.tipe !== "saldo").forEach(t => {
+    const friday = fridayWeekEnd(t.tanggal);
+    const key = isoDate(friday);
+    if (!map.has(key)) map.set(key, { minggu: key, masuk: 0, keluar: 0 });
+    const bucket = map.get(key);
+    bucket.masuk += t.masuk || 0;
+    bucket.keluar += t.keluar || 0;
+  });
+  const arr = Array.from(map.values()).sort((a, b) => (a.minggu < b.minggu ? -1 : 1));
+  const last = arr.slice(-8);
+
+  const canvas = document.getElementById("chart-tren");
+  const emptyMsg = document.getElementById("chart-empty");
+
+  if (last.length === 0) {
+    canvas.style.display = "none";
+    emptyMsg.style.display = "block";
+    return;
+  }
+  canvas.style.display = "block";
+  emptyMsg.style.display = "none";
+
+  const labels = last.map(w => {
+    const d = toDate(w.minggu);
+    return d.getDate() + " " + BULAN[d.getMonth()].slice(0, 3);
+  });
+
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(canvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        { label: "Pemasukan", data: last.map(w => w.masuk), backgroundColor: "#0D4D3C", borderRadius: 4, maxBarThickness: 26 },
+        { label: "Pengeluaran", data: last.map(w => w.keluar), backgroundColor: "#C97B6D", borderRadius: 4, maxBarThickness: 26 },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "top", labels: { font: { size: 12 }, color: "#4A4738" } },
+        tooltip: {
+          callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatRp(ctx.raw)}` },
+        },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: "#6B675A" } },
+        y: {
+          grid: { color: "#EFEADA" },
+          ticks: {
+            font: { size: 11 }, color: "#6B675A",
+            callback: (v) => (v >= 1000 ? (v / 1000) + "rb" : v),
+          },
+        },
+      },
+    },
+  });
+}
+
+function resetFilters() {
+  filters = { tahun: "semua", bulan: "semua", hari: "semua", tipe: "semua", search: "", mulai: "", akhir: "" };
+  document.getElementById("f-tahun").value = "semua";
+  document.getElementById("f-bulan").value = "semua";
+  document.getElementById("f-hari").value = "semua";
+  document.getElementById("f-tipe").value = "semua";
+  document.getElementById("f-search").value = "";
+  document.getElementById("f-mulai").value = "";
+  document.getElementById("f-akhir").value = "";
+  render();
+}
+
+function presetMingguIni() {
+  const today = new Date();
+  const day = today.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - diffToMonday);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  resetFilters();
+  filters.mulai = isoDate(monday);
+  filters.akhir = isoDate(sunday);
+  document.getElementById("f-mulai").value = filters.mulai;
+  document.getElementById("f-akhir").value = filters.akhir;
+  render();
+}
+
+function presetBulanIni() {
+  const today = new Date();
+  const first = new Date(today.getFullYear(), today.getMonth(), 1);
+  const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  resetFilters();
+  filters.mulai = isoDate(first);
+  filters.akhir = isoDate(last);
+  document.getElementById("f-mulai").value = filters.mulai;
+  document.getElementById("f-akhir").value = filters.akhir;
+  render();
+}
+
+function showUploadMsg(ok, text) {
+  const el = document.getElementById("upload-msg");
+  el.className = "upload-msg " + (ok ? "ok" : "err");
+  el.textContent = text;
+}
+
+function handleUpload(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const wb = XLSX.read(evt.target.result, { type: "array", cellDates: true });
+      let rows = null;
+      for (const sheetName of wb.SheetNames) {
+        const ws = wb.Sheets[sheetName];
+        const grid = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+        const headerIdx = grid.findIndex(row => Array.isArray(row) && row.some(c => String(c || "").toUpperCase().includes("TANGGAL")));
+        if (headerIdx === -1) continue;
+        const header = grid[headerIdx].map(h => String(h || "").trim().toUpperCase());
+        const iNo = header.indexOf("NO");
+        const iTgl = header.indexOf("TANGGAL");
+        const iRincian = header.indexOf("RINCIAN");
+        const iMasuk = header.indexOf("UANG MASUK");
+        const iKeluar = header.indexOf("UANG KELUAR");
+        const iSaldo = header.indexOf("SALDO AKHIR");
+        const iKet = header.indexOf("KETERANGAN");
+        if (iTgl === -1 || iSaldo === -1) continue;
+
+        const parsed = [];
+        for (let r = headerIdx + 1; r < grid.length; r++) {
+          const row = grid[r];
+          if (!row || row[iTgl] === undefined || row[iTgl] === null || row[iTgl] === "") continue;
+          let tgl = row[iTgl];
+          let tanggalStr;
+          if (tgl instanceof Date) {
+            tanggalStr = isoDate(tgl);
+          } else {
+            const dtry = new Date(tgl);
+            if (isNaN(dtry.getTime())) continue;
+            tanggalStr = isoDate(dtry);
+          }
+          const rincian = String(row[iRincian] || "").trim();
+          const masuk = Number(row[iMasuk]) || 0;
+          const keluar = Number(row[iKeluar]) || 0;
+          const saldo = Number(row[iSaldo]) || 0;
+          const ket = iKet !== -1 ? String(row[iKet] || "").trim() : "";
+          parsed.push({
+            no: iNo !== -1 && row[iNo] !== undefined ? Number(row[iNo]) : parsed.length + 1,
+            tanggal: tanggalStr,
+            rincian: rincian || "-",
+            masuk, keluar, saldo, ket,
+            tipe: rincian.toUpperCase().includes("SALDO AWAL") ? "saldo" : undefined,
+          });
+        }
+        if (parsed.length > 0) { rows = parsed; break; }
+      }
+      if (!rows) {
+        showUploadMsg(false, "Format tidak dikenali. Pastikan sheet memiliki kolom TANGGAL, RINCIAN, UANG MASUK, UANG KELUAR, SALDO AKHIR.");
+        return;
+      }
+      data = rows;
+      populateSelects();
+      resetFilters();
+      showUploadMsg(true, `Berhasil memuat ${rows.length} baris transaksi.`);
+    } catch (err) {
+      showUploadMsg(false, "Gagal membaca file. Pastikan file berformat .xls, .xlsx, atau .csv.");
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = "";
+}
+
+document.getElementById("f-tahun").addEventListener("change", e => { filters.tahun = e.target.value; render(); });
+document.getElementById("f-bulan").addEventListener("change", e => { filters.bulan = e.target.value; render(); });
+document.getElementById("f-hari").addEventListener("change", e => { filters.hari = e.target.value; render(); });
+document.getElementById("f-tipe").addEventListener("change", e => { filters.tipe = e.target.value; render(); });
+document.getElementById("f-search").addEventListener("input", e => { filters.search = e.target.value; render(); });
+document.getElementById("f-mulai").addEventListener("change", e => { filters.mulai = e.target.value; render(); });
+document.getElementById("f-akhir").addEventListener("change", e => { filters.akhir = e.target.value; render(); });
+document.getElementById("btn-reset").addEventListener("click", resetFilters);
+document.getElementById("preset-minggu").addEventListener("click", presetMingguIni);
+document.getElementById("preset-bulan").addEventListener("click", presetBulanIni);
+document.getElementById("preset-semua").addEventListener("click", resetFilters);
+document.getElementById("btn-upload").addEventListener("click", () => document.getElementById("file-input").click());
+document.getElementById("file-input").addEventListener("change", handleUpload);
+
+populateSelects();
+render();
+</script>
+</body>
+</html>
